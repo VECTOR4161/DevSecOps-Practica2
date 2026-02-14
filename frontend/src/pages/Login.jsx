@@ -13,6 +13,7 @@ export default function Login({ onLogin }) {
     setError("");
 
     try {
+      console.log("Entra en el metodo")
       const response = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
