@@ -6,6 +6,10 @@ on:
 jobs:
   devsecops:
     runs-on: ubuntu-latest
+    env:
+      USERS_IMAGE: users-service:${{ github.sha }}
+      ACADEMIC_IMAGE: academic-service:${{ github.sha }}
+      API_GATEWAY_IMAGE: api-gateway:${{ github.sha }}
     steps:
     # =========================
     # 1. Checkout
@@ -73,6 +77,32 @@ jobs:
         cd frontend
         npm ci
         npm test
+
+    # =========================
+    # 4.1 Code Quality – ESLint
+    # =========================
+    #- name: Lint frontend
+    #  run: |
+    #    cd frontend
+    #    npm run lint
+
+    # =========================
+    # 4.2 SCA – Dependencies
+    # =========================
+    - name: SCA users-service (npm audit)
+      run: |
+        cd backend/users-service
+        npm audit --omit=dev --audit-level=critical
+
+    - name: SCA academic-service (npm audit)
+      run: |
+        cd backend/academic-service
+        npm audit --omit=dev --audit-level=critical
+
+    - name: SCA api-gateway (npm audit)
+      run: |
+        cd backend/api-gateway
+        npm audit --omit=dev --audit-level=critical
     # =========================
     # 5. SAST – Semgrep
     # =========================
@@ -106,9 +136,11 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
-    - name: Build Docker images
+    - name: Build Docker images (versioned)
       run: |
-        docker compose -f backend/docker-compose.yml build
+        docker build -t "$USERS_IMAGE" backend/users-service
+        docker build -t "$ACADEMIC_IMAGE" backend/academic-service
+        docker build -t "$API_GATEWAY_IMAGE" backend/api-gateway
 
     # =========================
     # 7. SCA – Trivy
@@ -116,21 +148,24 @@ jobs:
     - name: Trivy scan users-service
       uses: aquasecurity/trivy-action@0.20.0
       with:
-        image-ref: users-service
+        image-ref: ${{ env.USERS_IMAGE }}
+        scanners: vuln
         severity: HIGH
         exit-code: 1
 
     - name: Trivy scan academic-service
       uses: aquasecurity/trivy-action@0.20.0
       with:
-        image-ref: academic-service
+        image-ref: ${{ env.ACADEMIC_IMAGE }}
+        scanners: vuln
         severity: CRITICAL
         exit-code: 1
 
     - name: Trivy scan api-gateway
       uses: aquasecurity/trivy-action@0.20.0
       with:
-        image-ref: api-gateway
+        image-ref: ${{ env.API_GATEWAY_IMAGE }}
+        scanners: vuln
         severity: CRITICAL
         exit-code: 1
 
