@@ -81,10 +81,10 @@ jobs:
     # =========================
     # 4.1 Code Quality – ESLint
     # =========================
-    #- name: Lint frontend
-    #  run: |
-    #    cd frontend
-    #    npm run lint
+    - name: Lint frontend
+      run: |
+       cd frontend
+       npm run lint
 
     # =========================
     # 4.2 SCA – Dependencies
